@@ -1,0 +1,119 @@
+---
+output:
+  html_document: default
+---
+---
+title: "HWK 1"
+author: "Dingxian Cao"
+date: "September 9, 2015"
+output: html_document
+---  
+
+# 1  
+
+## 1.a
+```{r}
+suppressMessages(library(quantmod,quietly = T))
+suppressMessages(getSymbols("^GSPC",from = "2012/01/03", to= "2015/09/08"))
+head(GSPC)
+day_return<-dailyReturn(Ad(GSPC),type = "arithmetic")#use adjusted
+chartSeries(day_return,type="line",name="simple daily return of S&P500",theme = chartTheme("white"))
+``` 
+
+## 1.b
+```{r}
+suppressMessages(library(fBasics,quietly = T))
+brief <-function(x) return(c(mean(x),sd(x),skewness(x),kurtosis(x)-3,min(x),max(x)))
+return_summary<-brief(day_return)
+names(return_summary)<-c("mean","sd","skewness","excess kurtosis","min","max")
+data.frame(return_summary) 
+```
+
+## 1.c  
+```{r}
+plot(density(day_return),main="empirical density")
+curve(dnorm(x,mean = mean(day_return),
+            sd = sd(day_return)),
+      xlim=c(-0.04,+0.04),
+      lty=2,add=T)
+legend("topright",lty=c(1,2),c("empirical","theory"))
+normalTest(day_return,method="jb") 
+```  
+
+According to the empirical density curve compared to the normal density curve and the JB-test, we can say that the simple return of S&P doesn't have a normal distribution.
+
+## 1.d
+```{r}
+log_return<-log(day_return+1)
+head(log_return)
+return_summary<-brief(log_return)
+names(return_summary)<-c("mean","sd","skewness","excess kurtosis","min","max")
+data.frame(return_summary)  
+```
+
+## 1.e 
+
+```{r}
+t.test(log_return) 
+```
+From the test, we can say that the mean of the log return of S&P is zero.
+
+## 1.f
+```{r}
+abs(skewness(log_return)/sqrt(6/length(log_return)))>qnorm(0.05/2)
+```
+I compute the  Skewness(N(0,6/T)) statistic and it turns out that under the 5% significance level, the log return of S&P is not symmetric.
+
+## 1.g 
+
+```{r}
+plot(density(log_return),main="empirical density",col="red")
+curve(dnorm(x,mean = mean(log_return),
+            sd = sd(log_return)),
+      xlim=c(-0.04,+0.04),
+      lty=2,col="blue",add=T)
+legend("topright",lty=c(1,2),col=c("red","blue"),c("empirical","theory"))
+
+(kurtosis(log_return)-3)/sqrt(24/length(log_return))>qnorm(0.05/2)
+```
+
+According to the empirical density curve compared to the normal density curve and the Kurtosis(N(0,24/T)) statistic, we can say that the **tail behavior** of the log return of S&P is normal!
+
+# 2 
+
+## 2.a
+```{r} 
+suppressMessages(getFX("USD/CNY", from="2012-01-03", to = "2015-09-08"))
+head(USDCNY)
+log_return<-dailyReturn(USDCNY,type = "log")
+chartSeries(log_return,type="line",name="log return of USD/CNY",theme = chartTheme("white"))
+```
+
+## 2.b
+```{r}
+return_summary<-brief(log_return)
+names(return_summary)<-c("mean","sd","skewness","excess kurtosis","min","max")
+data.frame(return_summary) 
+```
+
+## 2.c
+```{r}
+plot(density(log_return),main="empirical density")
+curve(dnorm(x,mean = mean(log_return),
+            sd = sd(log_return)),
+      xlim=c(-0.04,+0.04),
+      lty=2,add=T)
+legend("topright",lty=c(1,2),c("empirical","theory"))
+```
+
+## 2.d
+```{r}
+t.test(log_return)
+```
+the t test turns out that the mean of the daily log return of the exchange rate is 0.
+
+## 2.e  
+```{r}
+normalTest(log_return,method="jb") 
+```
+According to the JB test, the daily log return of the exchange is not normally distributed.
