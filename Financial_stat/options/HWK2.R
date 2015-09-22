@@ -1,0 +1,97 @@
+# 1
+size <- 100 
+k<-21  
+f<-100 
+s0<-20  
+call_short <- function(s){
+  100 + sapply(s, function(s) min(c(k-s,0))*size)
+}  
+curve(call_short,0,25, main = "profit for short in Call", col = "blue", lty=1,lwd=1,ylab=expression(f(x)))
+
+# 2 
+c=4
+p=3
+r=0.1
+k=22
+s0=20
+t<- 0.5
+parity<-data.frame(p+s0,c+k*exp(-r*t))
+names(parity)<-c("p+s0","c+k*exp(-r*t)")
+parity
+
+# 3  
+k1<-20
+c1<-10
+k2<-30
+c2<-4
+
+k3<-25
+c3<-6  
+
+call_short <- function(s){
+  c3*2 + sapply(s, function(s) min(c(k3-s,0))*2)
+}  
+
+call_long1 <-function(s){
+  -c1 + sapply(s, function(s) max(c(s-k1,0)))
+}
+call_long2 <-function(s){
+  -c2 + sapply(s, function(s) max(c(s-k2,0)))
+}
+net_profit<-function(s){
+  call_long2(s)+call_long1(s)+call_short(s)
+}
+profit<-net_profit(seq(20,30,by = 0.01))  
+
+curve(call_short,0,35,ylim=c(-15,15),xlim=c(15,35),lty=2,add = T,main="net profit of butterfly spread combination",ylab=expression(f(x)))
+curve(call_long1,0,35,lty=3,add = T)
+curve(call_long2,0,35,lty=4,add = T)
+curve(net_profit,0,35,lty=1,lwd=5,add = T)
+abline(v=seq(20,30,by = 0.01)[which.max(profit)])
+legend("topright",lty=c(2,3,4,1),c("call_short","call_long1","call_long2","butterfly spread")) 
+zero_point<-seq(20,30,by = 0.01)[which(abs(profit)<0.001)]
+abline(v=zero_point)
+mtext(text = as.character(zero_point), at = zero_point,side = 1)
+grid()
+
+
+# 4  
+s0=10
+r=0.12
+k=10.5
+su=11
+sd=9
+
+(delta<-(su-k-0)/(su-sd))
+(f<-delta*s0-(delta*sd*exp(-r*0.25)))
+
+# 5  
+n = 10
+tau= 1
+r = .06
+S0 = 100
+u = 1.1 
+d = 0.9
+K = 110   
+pu=(exp(r*tau)-d)/(u-d)
+pd=1-pu
+
+S<- vector("list",10)# market price of the underlying asset
+for(i in seq(10)){
+  for(j in 0:i){
+    S[[i]]<-c(S[[i]],S0*d^j*u^(i-j))
+  }
+}
+
+V<-vector("list",10)# value for the option
+V[[10]]<-sapply(S[[10]],function(s) max(c(s-K,0)))
+
+for(i in 9:1){
+  for(j in 1:(i+1)){
+    V[[i]]<-c(V[[i]],exp(-r*tau)*(pu*V[[i+1]][j] +pd*V[[i+1]][j+1]))
+  }
+}
+V
+
+exp(-r*tau)*(pu*V[[1]][1] +pd*V[[1]][2])#the present fair price for the option
+
