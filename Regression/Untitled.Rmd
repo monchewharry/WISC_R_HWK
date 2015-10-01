@@ -1,0 +1,128 @@
+---
+title: "hwk_601_1"
+author: "Dingxian Cao"
+date: "September 30, 2015"
+output: word_document
+---
+
+# ex2
+take k=9074463432 mod 35
+
+```{r}
+options(digits = 4)
+setwd("/Users/CDX/WISC_R_HWK/Regression")
+suppressMessages(library(broom))
+ext2<-read.table("HWK2_Ext2.txt")
+k<-9074463432 %% 35
+d<-ext2[((k-1)*90+1):(k*90),]
+dim(d)
+
+d1<-d[1:30,]
+d2<-d[31:60,]
+d3<-d[61:90,]
+
+knitr::kable(tidy(cor(d)))
+library(car)
+scatterplotMatrix(d,spread=F)
+
+```  
+
+>From the scatter plot and the covariance matrix we can see that there are no obvious relationship between V1 and V3, so there shouldn't be a response variable between the two.    
+
+>But they both have a clear relationship with V2.So,I believe there is V2 is the reponse variable.   
+
+```{r}
+plot(cbind(d,d$V2^2,d$V3^2,d$V2*d$V3)[-c(1,3)])
+```
+
+>Since we don't know the true model, we cannot use the model to identify the explantory variables. So I first assume X1=V1.
+
+### model 1
+```{r}
+options(digits = 4)
+d11<-as.data.frame(d1)
+names(d11)<-c("x1","y","x2")
+form1<- as.formula("y ~ 1+x1+x1:x2")
+m1<-lm(form1,data=d11);knitr::kable(tidy(m1))
+```
+
+### model2 
+```{r}
+d21<-as.data.frame(d2)
+names(d21)<-c("x1","y","x2")
+form2<-as.formula("1/y ~ 1+x1+x2")
+m2<-lm(form2,data=d21);knitr::kable(tidy(m2))
+
+```
+
+### model3
+```{r}
+d31<-as.data.frame(d3)
+names(d31)<-c("x1","y","x2")
+form3<-as.formula("y ~ 0+x1+x2+I(x1^2)")
+m3<-lm(form3,data=d31);knitr::kable(tidy(m3))
+
+```  
+
+>According to the P value of each coefficients, the third model is obviously the best fitted.  
+
+# ex3   
+
+```{r}
+#install.packages("SenSrivastava")
+library(SenSrivastava)
+suppressMessages(library(dplyr))
+y_range<-range(E1.19$Price)
+x_range<-range(E1.19$P)
+group<-split(E1.19,E1.19$B)
+par(mfrow=c(1,1))
+plot(group$c[c(2,1)],xlim=x_range,ylim=y_range,pch=10,main="type = c")
+plot(group$p[c(2,1)],xlim=x_range,ylim=y_range,pch=11,main="type = p")
+
+library(ggplot2)
+ggplot(E1.19,aes(x=P,y = Price,group=B,colour=B,shape=B))+ xlab("#page")+geom_line()
+```  
+
+>Since their axes are the same, I don't think there is any difference betweent individual and overlaid graph helping me explore the data.
+
+>I personally don't want to distroy the structure of original data. But since the x variable varies wider than y variable, I may suggest to scale the x variable by letting each number be divided by their maximum.
+
+```{r}
+qplot(P,Price,data=E1.19)+
+  geom_smooth(aes(colour=B),method="lm",se=F)+
+  facet_wrap( ~ B,scale="free_y")+
+  labs(title="Key Graph")
+
+```
+
+This picture clearly shows the linear relationship between price and page's volume in terms of two different kind of books.
+
+
+# ex4  
+
+```{r}
+grocery<-read.table("grocery_retailer.txt",header = T)
+plot(grocery)
+```  
+
+>I can get the infomation of pair-wise correlation which can help we varify the signs of coefficients.
+
+```{r}
+m<-lm(Y~X1+X2+X3,data = grocery)
+knitr::kable(tidy(m))
+```  
+
+>The coefficient of X3 means that if there happens to be a holiday the total labor hours will be about 623 hours more than usual.
+
+```{r}
+plot(resid(m),type="l",main="residuals")
+abline(h=mean(resid(m)))
+
+layout(matrix(c(1,2,3,4),2,2,byrow = T))
+plot(x=grocery$X1,y=resid(m),main="X1 vs Residuals")
+plot(x=grocery$X2,y=resid(m),main="X2 vs Residuals")
+plot(x=grocery$X3,y=resid(m),main="X3 vs Residuals")
+```
+
+>Apparently,there is a pattern between the residuals and independent variable X3.The variance of the error item can change along with X3. So the Gauss-Markov assuption is violated.
+
