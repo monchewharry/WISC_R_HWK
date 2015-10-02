@@ -73,7 +73,7 @@ scatterplotMatrix(d2,spread=F,main="data2")
 
 ```{r}
 d21<-as.data.frame(d2)
-names(d21)<-c("x2","y","x1")
+names(d21)<-c("x1","y","x2")
 ```
 
 
