@@ -12,19 +12,91 @@ take k=9074463432 mod 35
 options(digits = 4)
 setwd("/Users/CDX/WISC_R_HWK/Regression")
 suppressMessages(library(broom))
+library(car)
 ext2<-read.table("HWK2_Ext2.txt")
-k<-9074463432 %% 35
+(k<-9074463432 %% 35)
 d<-ext2[((k-1)*90+1):(k*90),]
 dim(d)
 
 d1<-d[1:30,]
 d2<-d[31:60,]
 d3<-d[61:90,]
+```
 
-knitr::kable(tidy(cor(d)))
-library(car)
-scatterplotMatrix(d,spread=F)
+## data 1
+```{r}
+knitr::kable(tidy(cor(d1)))
+scatterplotMatrix(d1,spread=F,main="data1")
+```
 
+>From the scatter plot and the covariance matrix we can see that there are no obvious relationship between V1 and V3, so there shouldn't be a response variable between the two.    
+
+>But they both have a clear relationship with V2.So,I believe there is V2 is the reponse variable.   
+
+```{r}
+d11<-as.data.frame(d1)
+names(d11)<-c("x1","y","x2")
+```
+
+
+#### data1 for model 1
+```{r}
+form1<- as.formula("y ~ 1+x1+x1:x2")
+m1<-lm(form1,data=d11);knitr::kable(tidy(m1))
+```
+
+#### data1 for model2 
+```{r}
+form2<-as.formula("1/y ~ 1+x1+x2")
+m2<-lm(form2,data=d11);knitr::kable(tidy(m2))
+```
+
+#### data1 for model3  
+
+```{r}
+form3<-as.formula("y ~ 0+x1+x2+I(x1^2)")
+m3<-lm(form3,data=d11);knitr::kable(tidy(m3))
+```  
+
+>According to the P value of each coefficients, the 2nd model is obviously the best fitted.  
+
+## data 2
+```{r}
+knitr::kable(tidy(cor(d2)))
+scatterplotMatrix(d2,spread=F,main="data2")
+```
+
+
+>From the scatter plot and the covariance matrix we can see that there are no obvious relationship between V1 and V3, so there shouldn't be a response variable between the two.    
+
+>But they both have a clear relationship with V2.So,I believe there is V2 is the reponse variable.   
+
+```{r}
+d21<-as.data.frame(d2)
+names(d21)<-c("x2","y","x1")
+```
+
+
+#### data2 for model 1
+```{r}
+form1<- as.formula("y ~ 1+x1+x1:x2")
+m1<-lm(form1,data=d21);knitr::kable(tidy(m1))
+```
+
+#### data2 for model3  
+
+```{r}
+form3<-as.formula("y ~ 0+x1+x2+I(x1^2)")
+m3<-lm(form3,data=d21);knitr::kable(tidy(m3))
+```  
+
+>According to the P value of each coefficients, the 1st obviously the best fitted.  
+
+## data 3  
+
+```{r}
+knitr::kable(tidy(cor(d3)))
+scatterplotMatrix(d3,spread=F,main="data3")
 ```  
 
 >From the scatter plot and the covariance matrix we can see that there are no obvious relationship between V1 and V3, so there shouldn't be a response variable between the two.    
@@ -32,39 +104,18 @@ scatterplotMatrix(d,spread=F)
 >But they both have a clear relationship with V2.So,I believe there is V2 is the reponse variable.   
 
 ```{r}
-plot(cbind(d,d$V2^2,d$V3^2,d$V2*d$V3)[-c(1,3)])
-```
-
->Since we don't know the true model, we cannot use the model to identify the explantory variables. So I first assume X1=V1.
-
-### model 1
-```{r}
-options(digits = 4)
-d11<-as.data.frame(d1)
-names(d11)<-c("x1","y","x2")
-form1<- as.formula("y ~ 1+x1+x1:x2")
-m1<-lm(form1,data=d11);knitr::kable(tidy(m1))
-```
-
-### model2 
-```{r}
-d21<-as.data.frame(d2)
-names(d21)<-c("x1","y","x2")
-form2<-as.formula("1/y ~ 1+x1+x2")
-m2<-lm(form2,data=d21);knitr::kable(tidy(m2))
-
-```
-
-### model3
-```{r}
 d31<-as.data.frame(d3)
 names(d31)<-c("x1","y","x2")
+```
+
+#### data3 for model3  
+
+```{r}
 form3<-as.formula("y ~ 0+x1+x2+I(x1^2)")
 m3<-lm(form3,data=d31);knitr::kable(tidy(m3))
-
 ```  
 
->According to the P value of each coefficients, the third model is obviously the best fitted.  
+>According to the P value of each coefficients, the 3rd model is obviously the best fitted.  
 
 # ex3   
 
@@ -97,6 +148,7 @@ qplot(P,Price,data=E1.19)+
 
 This picture clearly shows the linear relationship between price and page's volume in terms of two different kind of books.
 
+>review: I don't think there is meaning in identifying the x1 and x2 by fitting the models.
 
 # ex4  
 
