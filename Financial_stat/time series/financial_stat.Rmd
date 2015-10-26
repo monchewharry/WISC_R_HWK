@@ -1,0 +1,98 @@
+---
+title: "financial_stat"
+author: "Dingxian Cao"
+date: "October 20, 2015"
+output: word_document
+---
+# 1.
+
+
+# 2.simulation of AR(2) 
+```{r}
+n <- 100
+x0 <- 0
+set.seed(123)
+a<-rt(n,8)
+
+xt<-arima.sim(n, model=list(ar=c(0.6,-.4)),innov=a, start.innov=c(0,a[1]), n.start=2)
+              #but not include first 2 values
+
+xt <-seq(100)#solution 2
+xt[1]<- x0
+xt[2] <-a[1]
+for(i in 3:length(xt)){
+  xt[i]<-0.6*xt[i-1]-0.4*xt[i-2]+a[i-2]
+}#the same as previous code
+head(xt)
+
+acf(xt)
+pacf(xt)
+```
+
+# 3.simulate AR(1) 
+```{r}
+set.seed(321)
+sim_series<-arima.sim(n=100,model = list(ar=0.8))
+
+acf(sim_series)[c(1,5)]
+
+sim10000<-vector("list")
+for(i in seq(10000)){
+  sim10000[[i]]<- arima.sim(n=100,model = list(ar=0.8))
+}
+acf.1.5<-sapply(sim10000, function(x) acf(x,lag.max = 5,plot=FALSE)$acf[,,1][c(2,6)])
+rownames(acf.1.5)<-c("acf1","acf5")
+acf15<-as.data.frame(t(acf.1.5))
+
+hist(acf15$acf1,probability = T)
+plot(density(acf15$acf1),main="empirical/theoretical density")
+
+curve(dnorm(x,0.8,(1-0.8^2)/100)
+      ,xlim =c(0.4,0.9),add = T)
+
+
+hist(acf15$acf5,probability = T)
+plot(density(acf15$acf5),main="empirical/theoretical density",ylim=c(0,5) )
+curve(dnorm(x,0.8^5,(1/100)*(1+0.8^2)/(1-.8^2))
+      ,xlim =c(-0.4,0.9),add = T)
+```
+
+
+# 4.gold
+
+```{r}
+#gold<-read.csv("Downloads/gold.csv",colClasses = c("Date","numeric"))
+#class(gold$Date)
+load("/Users/CDX/gold.RData")
+library(dplyr)
+gold<-arrange(gold,Date)
+
+library(quantmod)
+gold<-.xts(gold$Value,index = gold$Date)
+chartSeries(gold,theme = "white")
+r<-dailyReturn(gold,type = "log")
+chartSeries(r,theme = "white")
+
+Box.test(r,lag=10,type = "Ljung-Box")
+
+
+ar1<-ar(unclass(r)[,1],method = "mle")
+plot(1:12,ar1$aic[2:13],main = "AIC 1:12",type = "b")
+
+fit<-arima(r,order=c(8,0,0))
+
+plot(fit$residuals)
+Box.test(fit$residuals,lag=10,type ="Ljung",fitdf = 8)
+
+se<-sqrt(diag(fit$var.coef))#se
+t<-fit$coef/se
+
+which(abs(t)>1.645)
+fixed<-rep(0,9)
+fixed[which(abs(t)>1.645)]<-NA 
+fit.new<-arima(r,order=c(8,0,0),fixed=fixed)
+fit.new
+
+predict(fit.new,3)
+```
+
