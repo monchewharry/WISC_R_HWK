@@ -11,10 +11,8 @@ yy<- muT+sigma*rnorm(n)# ONE realization  with different variance
 lm(yy~.,data=dat)  
 lm(yy~.,data=dat,weights = 1/sigmasq)
 
-
 S<-10000 #simulation realization number
 YY<- muT + sigma * matrix(rnorm(n * S), nrow = n,ncol = S)
-
 
 beta_diff<-function(y){
   lmi<-lm(y~.,data = dat)
@@ -28,4 +26,18 @@ beta_dif_wlm<-beta_dif[5:8,]
 
 rowMeans(beta_dif_lm^2)#beta mse OF OLS
 rowMeans(beta_dif_wlm^2)#beta mse OF WLS
+
+# 6
+ants <- read.table("thatch_ant_c5del.txt", sep='', header=TRUE)
+pairs(ants)
+library(lattice)
+splom(ants)
+
+
+
+
+
+
+
+
 
