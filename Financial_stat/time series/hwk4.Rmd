@@ -1,0 +1,148 @@
+---
+title: "hawks"
+author: "Dingxian Cao"
+date: "November 3, 2015"
+output: word_document
+---
+```{r}
+library(quantmod)
+getSymbols("^GSPC",from="2013-01-01",to="2015-09-30")
+range(index(GSPC))
+GSPC<-Ad(GSPC)
+ret<- dailyReturn(GSPC,type = "log")
+```
+
+## a  
+
+```{r}
+acf(ret)
+ma<-arima(ret,order = c(0,0,4),include.mean = F)
+se<-sqrt(diag(ma$var.coef))
+t<-ma$coef/se
+which( abs(t) <1.645)
+``` 
+
+## b  
+
+```{r}
+ma<-arima(ret,order = c(0,0,4),include.mean = F,fixed = c(0,0,0,NA))
+ma
+plot(ma$residuals)
+Box.test(ma$residuals,lag = 10,type = "Ljung-Box",fitdf = 4)
+```
+
+>according to the LB test, the ma(4) model is adequate.
+
+## c  
+
+```{r}
+pacf(ret)
+AR<-arima(ret,order = c(4,0,0),include.mean = FALSE)
+se<-sqrt(diag(AR$var.coef))
+t<-AR$coef/se
+which( abs(t) <1.645)
+AR<-arima(ret,order = c(4,0,0),include.mean = FALSE,fixed = c(0,0,0,NA))
+AR
+```
+
+## d
+
+```{r}
+plot(AR$residuals)
+Box.test(AR$residuals,lag = 10,type = "Ljung-Box",fitdf = 4)
+```
+>according to the LB test, the ar(4) model is adequate.
+
+## e
+
+```{r}
+ma
+```
+
+>since the log likelihood and aic value are more preferrable for ar model. I am going to take ar(4) model for in-sample fitting. 
+
+
+## f
+```{r}
+pre_ma<-c()
+for(i in((length(ret)-49):length(ret))){
+  ma<-arima(ret[1:i],order = c(0,0,4),include.mean = F,fixed = c(0,0,0,NA))
+  pre<-predict(ma,1)$pred
+  pre<-unclass(pre)[1]
+  pre_ma<-c(pre_ma,pre)
+}
+
+
+pre_ar<-c()
+for(i in((length(ret)-49):length(ret))){
+  AR<-arima(ret[1:i],order = c(4,0,0),include.mean = F,fixed = c(0,0,0,NA))
+  pre<-predict(AR,1)$pred
+  pre<-unclass(pre)[1]
+  pre_ar<-c(pre_ar,pre)
+}
+
+(mse_pre_ar<-sum((ret[(length(ret)-48):length(ret)]- pre_ar[-50])^2))
+(mse_pre_ma<-sum((ret[(length(ret)-48):length(ret)]- pre_ma[-50])^2))
+```
+
+>since the mse of ar model's out sample prediction is smaller, I would use ar(4) for prediction.
+
+
+
+# 4    
+
+##a 
+
+```{r}
+rate<-read.csv("rate1.csv")#1980-1 2015-9/monthly rate
+rate<-as.matrix(rate)
+rate<-as.vector(rate)
+rate<-rate-10*(1:length(rate))
+rate<-rate/100
+rate<-ts(rate,deltat = 1/12,start = c(1980,1))#monthly data
+
+plot(rate)
+```
+
+```{r}
+library(tseries)
+adf.test(rate,k = 2)
+```
+>According to the result of Augmented Dickey-Fuller Test, since the p value is greater than 0.05, we should accept the null hypothesis which means the rate series does have a unit root.  
+
+
+## b
+```{r} 
+(out<-which(rate<0.02))#outliers
+X<-matrix(0,nrow = length(rate),ncol = length(out))
+loc<-cbind(out,1:length(out))
+for(i in seq(length(out))){
+  X[loc[i],i]<-1
+}
+
+
+# rate<-rate[-out]
+# ts.plot(rate)
+
+library(forecast)
+(model<- auto.arima(rate,xreg =X ))
+plot(model$residuals)
+tsdiag(model)
+X_NEW<- matrix(0,nrow = 1,ncol = length(out))
+X_NEW
+oct<-predict(model,n.ahead = 1,newxreg = X_NEW)
+oct$pred
+```
+>According to the box test, the residuals of the model can be seen as white noise which means the seasonal ARIMA(2,1,2)(2,0,2)[12] is adequate for the data. 
+
+
+## c  
+To calculate the ar part polynomial function,we can get complex roots. So the model shows the business cycle.
+
+```{r} 
+p<-c(1,-model$coef[1:2])
+(a1<- polyroot(p))
+```
+
+
+
