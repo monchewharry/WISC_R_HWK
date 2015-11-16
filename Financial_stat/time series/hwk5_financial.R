@@ -105,6 +105,23 @@ acf(std.resid^2)# the model is adequate
 
 
 
+## j
+spec5 <- ugarchspec( 
+  variance.model=list(model="sGARCH", garchOrder=c(1,1)),
+  mean.model=list(armaOrder=c(3,2), include.mean=T, archm=T, archpow=1 ) , 
+  distribution.model="std") 
+m5=ugarchfit(r,spec=spec5) # fit model
+
+m5 # the model  
+std.resid<-m5@fit$z
+Box.test(std.resid, lag=10, type = "Ljung-Box", fitdf = 5)
+Box.test(std.resid^2, lag=10, type = "Ljung-Box", fitdf = 5)
+acf(std.resid^2)# the model is adequate 
+
+
+
+
+
 
 
 
