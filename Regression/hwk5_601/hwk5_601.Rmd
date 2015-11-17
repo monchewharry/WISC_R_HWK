@@ -1,0 +1,119 @@
+---
+title: "hwk5_601"
+output: html_document
+---
+
+## 3  
+
+### a  
+```{r}
+d<-read.csv("pgatour2006.csv",header = T);head(d)
+dd<-d[-c(1,2,4,11)]
+
+pairs(dd,upper.panel = NULL)
+ddd<-dd
+ddd$PrizeMoney<-log(dd$PrizeMoney)
+pairs(ddd, upper.panel = NULL)
+```
+>I think it is appropriate to transform Y using the log transformation, because the scatter plots between the log(y) and other independent variables show much clear relationship.
+
+### b  
+
+```{r} 
+full<-lm(log(PrizeMoney)~.,data = dd)
+summary(full)
+par(mfrow=c(2,2))
+plot(full, ask = F)
+par(mfrow=c(1,1))
+
+plot(resid(full))
+abline(h=mean(resid(full)))
+```
+
+### c  
+
+```{r}  
+x<-model.matrix(full)
+lev<-hat(x)
+plot(lev,ylab = "leverage points")
+abline(h=(2*7)/196)
+which(lev>(14/196))#leverage points
+
+plot(full,which = 4)#influential points
+abline(h=4/(196-7))
+
+library(car)
+outlierTest(full)#take 185th point as outliers
+```
+
+### d  
+
+weakness:  
+- not all the independent variables are significant.
+
+### e  
+
+It is dangerous to remove all the insignificant variables at one time, because it may remove some potential significant variables. There are several reasons may cause a bunch of variables including important ones to be insignificant, say multi-colinearity.  
+
+## 6  
+
+```{r}
+n=50  
+p=10000
+mu<-sample(x = 1:10000,size = 10000)
+x<-sapply(mu, function(x) rnorm(n,mean = x,sd = 3))
+beta_t<-c(1:p)
+y<-x%*%beta_t+rnorm(n)
+d<- as.data.frame(x)
+d<- cbind(y,d) 
+
+d_under<-d[1:10]
+lm(y~.,data = d_under)
+lm(y~.,data = d)
+
+```
+
+## 8  
+```{r}  
+job <- read.table("jobdata.txt", sep='',col.names=c("Y","X1","X2","X3","X4"))
+str(job)
+f<-lm(Y~.,data = job)
+step(f,direction = "forward")
+step(f,direction = "backward")
+step(f,direction = "both")
+```
+
+
+## 9  
+
+```{r} 
+#install.packages("leaps")
+library(leaps)
+
+
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
