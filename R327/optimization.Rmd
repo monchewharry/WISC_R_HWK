@@ -1,0 +1,144 @@
+---
+title: "327_work1"
+author: "Dingxian Cao"
+date: "November 10, 2015"
+output: html_document
+---
+# STAT 327 Group work on Optimization
+
+Please write the names and email addresses of your group members.
+Here's an example:
+
+* Name / email (@wisc.edu only): John Gillett / jgillett@wisc.edu
+
+* Dingxian Cao / email (dcao28@wisc.edu)
+* Mingyi Yang / email (myang263@wisc.edu): ...
+* Rouyi Ding/ email (rding26@wisc.edu): ...
+
+# Part 1: One-dimensional optimization
+
+Graph the object's altitude vs. time.
+
+```{r}
+z0=100;m=80;c=15;v0=55;g=9.81
+
+z <- function(t){
+  z0+(m/c)*(v0+m*g/c)*(1- exp(-c*t/m)) - m*g*t/c
+}
+
+curve(z,from = 0, to = 13)
+abline(h=0)
+```
+
+Find the time at which the object strikes the ground.
+
+```{r}
+f<-function(x){
+  abs(z(x))
+}
+optimize(f,c(0,20))
+```
+
+Find the object's maximum height.
+
+```{r}
+f<-function(x){
+  -(z(x))
+}
+opt<-optimize(f,interval = c(0,14))
+opt$minimum
+
+```  
+
+Find the time at which the object reaches its maximum height.
+
+```{r}
+z(opt$minimum)
+#abline(v=opt$minimum)
+```
+
+# Part 2: Multi-dimensional optimization
+
+## function plot
+```{r}
+f = function(x,y) { # Define function z = f(x, y).
+  return(7.9+0.13*x+0.21*y-0.05*(x^2)-0.016*(y^2)-0.007*x*y)
+}
+
+# Plot function, z = f(x, y) over the region -pi/2 <= x, y <= pi/2.
+grid.x = seq(-10, 10, length.out=20)
+grid.y = seq(0,20,length.out=20)
+grid.z = outer(grid.x, grid.y, f)
+persp.out <- persp(grid.x, grid.y, grid.z, theta = 45, phi=60,
+  main="Gradient descent", ticktype="detailed",
+  xlab="x", ylab="y", zlab="z")
+```
+
+## Use `gradient.descent()` to find the peak.
+```{r}
+gradient.descent = function(par, gr1, gr2, gamma=.1, epsilon=.02, n=100, verbose=FALSE, ...) {
+  for (i in seq_len(n)) {
+    gradient1 = gr1(par[1],par[2])
+    par[1] = par[1] - gamma * gradient1
+    gradient2 = gr2(par[1],par[2])
+    par[2] = par[2] - gamma * gradient2
+    gradient.size = sum(abs(min(gradient1,gradient2)))
+    
+    if (verbose) {
+      cat(sep="", "i=", i, ", par=c(", paste(signif(par, 4), collapse=","),
+          "), gradient=c(", paste(signif(gradient1, 4),signif(gradient2, 4), collapse=","),
+          "), size=", signif(gradient.size, 4), "\n")
+    }
+    if (gradient.size < epsilon) {
+      break
+    }
+  }
+  return(par)
+}
+
+gradient.x = function(x, y) {0.13-0.1*x-0.007*y}
+gradient.y = function(x, y) {0.21-0.032*y-0.007*x}
+(p<-gradient.descent(par=c(1,7), gr1=gradient.x, gr2=gradient.y, gamma=.01, epsilon=.01, n=100,verbose=FALSE))
+z<-f(p[1],p[2])
+persp.out <- persp(grid.x, grid.y, grid.z, theta = 45, phi=60,
+  main="Gradient descent", ticktype="detailed",
+  xlab="x", ylab="y", zlab="z")
+points(trans3d(x=p[1], y=p[2], z=z, pmat=persp.out), col="red", pch = 19)
+```
+
+## Use `optim()` with `method=Nelder-Mead` to find the peak.
+```{r}
+grr <- function(x) { ## Gradient of 'fr'
+    x1 <- x[1]
+    x2 <- x[2]
+    grad <- c(0.13-0.1*x1-0.007*x2,
+       0.21-0.032*x2-0.007*x1)
+    grad <- -grad
+    return(grad)
+}
+
+f1 = function(x) { # Define function z = f(x, y).
+  x1 <- x[1]
+  x2 <- x[2]
+  c<- -(7.9+0.13*x1+0.21*x2-0.05*(x1^2)-0.016*(x2^2)-0.007*x1*x2)
+  return(c)
+}
+
+optim(par = c(1,7),fn = f1, grr, method ="Nelder-Mead" )
+system.time(optim(par = c(1,7),fn = f1, grr, method ="Nelder-Mead" ))
+```
+
+## Use `optim()` with `method=BFGS` to find the peak.
+```{r}
+optim(par = c(1,7),fn = f1, grr,method ="BFGS" )
+system.time(optim(par = c(1,7),fn = f1, grr,method ="BFGS" ))
+```
+
+How many calls did `optim()` make in each case? Which method would you
+expect to be faster?
+
+>Since the BFGS method only makes 18 calls for the function and gradient while Nelder-Mead method makes 43 calls for the function, so we think the method BFGS is better. 
+
+
+
+
