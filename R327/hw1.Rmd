@@ -4,9 +4,9 @@ The `.Rmd` version of this file is [here](http://www.stat.wisc.edu/~jgillett/327
 
 We'll grade your homework by opening your "hw1.Rmd" file in RStudio (in a directory containing the data files), clicking "Knit HTML", reading the HTML output, and reading your "hw1.Rmd" file. You should write R code anywhere you see an empty R code chunk.
 
-Name: ...
+Name: Dingxian Cao  
 
-Email: ...
+Email: dcao28@wisc.edu
 
 # Part 1: Robust Regression
 
@@ -78,7 +78,51 @@ line to your plot colored "coral".
 e. Add a legend to your plot.
 
 ```{r}
-# ...
+library(MASS)
+attach(area)
+plot(x = land,y = farm)
+lse<-lm(farm~land,data = area)
+lines(x=land,y = lse$fitted.values,col="limegreen",lwd=1.5)
+
+k=19000
+rho<-function(x){#define function Tukey's rho
+  if( abs(x)<= k ) return(x^2)
+  else return(2*k*abs(x) - k^2)
+}
+rho.d<- function(x){
+  if( abs(x)<= k ) return(2*x)
+  else return(2*k*sign(x))
+}
+
+f1 = function(x) { # Define function Tukey = f(beta0, beta1).
+  x1 <- x[1]#beta0
+  x2 <- x[2]#beta1
+  t<- area$farm- x1 - x2*area$land
+  turkey<- mean(rho(t))
+  return(turkey)
+}  
+
+grr <- function(x) { ## Gradient of 'f1'
+    x1 <- x[1]
+    x2 <- x[2]
+    t<- area$farm- x1 - x2*area$land
+    grad <- c(-mean(rho.d(t)),
+              -mean(area$land*rho.d(t)))
+    return(grad)
+}
+
+options(warn=-1)
+(try(robust1<-optim(par = c(0,0),fn = f1, grr, method ="Nelder-Mead" ),silent = TRUE))
+abline(robust1$par,lwd=1.5,col="navy")
+
+(try(robust2<-optim(par = c(0,0),fn = f1, grr, method ="BFGS" ),silent = TRUE))
+abline(robust2$par,lwd=1.5,col="black")
+
+(try(robust3<-optim(par = c(0,0),fn = f1, grr, method ="CG" ),silent = TRUE))
+abline(robust3$par,lwd=1.5,col="coral")
+
+legend("topright", c("LSE","Robust_NM","Robust_BFGS","Robust_CG"),lwd = rep(1.5,4),
+       col = c("limegreen","navy","black","coral"))
 ```
 
 f. For which method was the value of the Tukey function the smallest?
@@ -88,8 +132,12 @@ interval $t \in (-100000,100000)$. Do you have an intuition of why the
 robust line is less influenced by the outliers in the data?
 
 ```{r}
-# ...
-```
+value<-c(robust1$value,robust2$value,robust3$value);names(value)<-c("Robust_NM","Robust_BFGS","Robust_CG")  
+
+names(value)[which.min(value)]
+```  
+
+>The Nelder-Mead method will provide minimum value of the Tukey function.    
 
 # Part 2: Exponential smoothing
 
@@ -119,19 +167,40 @@ The derivatives of this function are rather complicated (notice that $\hat{Y}_i$
 a. Using `optimize()` on the interval $[0,1]$, find the value of $\beta$ that produces the minimum forecast error. Set $\hat{Y}_2 = \hat{Y}_1 = Y_1$ for simplicity.
 
 ```{r}
+yh<-function(b){#return prediction
+  y_hat<- nhtemp 
+  y_hat[1]<-y_hat[2]<- nhtemp[1]
+  for(i in 3:length(y_hat)){
+    y_hat[i]<- b*nhtemp[i-1] + (1-b)* y_hat[i-1]
+  }
+  return(y_hat)
+}
 
-```
+fe<-function(b){
+  return(mean((nhtemp- yh(b))^2))
+}
+
+
+optimize(fe,c(0,1))
+```  
+
+>the value of $\beta$ which minimize the FE should be 0.186.  
 
 b. Plot the yearly average measurements of temperature for New Hampshire, from 1912 to 1971, and overlay the exponential smoothing of it using `lines()` (use a different color).
 
 ```{r}
-
+plot(nhtemp,main="temperature for New Hampshire",lwd=2)
+lines(yh(0.186),col="red",lwd=1.5)
 ```
 
 c. Reproduce the previous plot, but include some other levels of smoothing, say $\beta=0.1$ and $\beta=0.9$. Use different colors and include a legend.
 
 ```{r}
-
+plot(nhtemp,main="temperature for New Hampshire",lwd=2)
+lines(yh(0.186),col="red",lwd=1.5)
+lines(yh(0.1),col="blue",lwd=1.5)
+lines(yh(0.9),col="green",lwd=1.5)
+legend("bottomright",c("b=1","b=0.186","b=0.1","b=0.9"),lwd=c(2,1.5,1.5,1.5),col=c("black","red","blue","green"))
 ```
 
 # Part 3: Optimization for Maximum Likelihood Estimation
@@ -150,8 +219,33 @@ Since the logarithm is an increasing function, the maximum of $l$ occurs at the 
 Use `optim()` with its default Nelder-Mead method to find the estimates of $\mu$ and $\sigma$ that maximize $l$ over the data $x_1, \ldots, x_n = $ `mtcars$mpg`. Check your `optim()` estimates by comparing them to the sample mean and (population) standard deviation.
 
 ```{r}
-# ...
-```
+data("mtcars")
+dat<-mtcars$mpg
+f1 <- function(x){
+  mu <- x[1]
+  sigma <- x[2]
+  n=length(dat)
+  likelihood<-(n*log(1/ sqrt(2*pi*sigma^2)) - (1/(2*sigma^2))*sum((dat-mu)^2))
+  return(-likelihood)
+}
+
+
+grr <- function(x) { ## Gradient of 'fr'
+    mu <- x[1]
+    sigma <- x[2]
+    n=length(dat)
+    grad <- c((-1/sigma^2)*sum(dat-mu),
+            n*2*pi*sigma + sigma^(-3)*sum((dat-mu)^2))
+    grad <- -grad
+    return(grad)
+}
+
+optim(par = c(mean(dat),sd(dat)),fn = f1, grr, method ="Nelder-Mead" )
+
+mean(dat);sd(dat)
+```  
+
+>we can see that the mean is almost the same, the sd of MLE is a bit smaller than the sample sd.
 
 ## 3(b) MLE for the parameters $\beta_0$ and $\beta_1$ in logistic regression
 (If you're in a hurry to write code, you may skip past this background material to the line below that starts "Consider ... .")
@@ -201,7 +295,42 @@ Use `optim()` with its default Nelder-Mead method to find the estimates of $\bet
 * The curve $p(x; \beta_0, \beta_1)$, which should fit the previous 25 proportions quite well.
 
 ```{r}
-# ...
+menarche.cases$age<- jitter(menarche.cases$age)
+
+f1 <- function(x){#negative log likelihood
+  b0 <- x[1]
+  b1 <- x[2]
+  xx<- menarche.cases$age;
+  yy<- menarche.cases$reached.menarche
+  likelihood<- -sum(log(1+exp(b0+b1*xx))) + sum(yy*(b0+b1*xx))
+  return(-likelihood)
+}
+
+
+grr <- function(x) { ## Gradient of 'fr'
+    b0 <- x[1]
+    b1 <- x[2]
+    xx<- menarche.cases$age;
+    yy<- menarche.cases$reached.menarche
+    
+    grad <- c(- sum(exp(b0+b1*xx)/(1+exp(b0+b1*xx)))+sum(yy),
+              - sum(exp(b0+b1*xx)*xx/(1+exp(b0+b1*xx))) + sum(yy*xx) )
+    grad <- -grad
+    return(grad)
+}
+
+(logit<-optim(par = c(0,0), fn = f1, grr, method ="Nelder-Mead" ))
+
+
+plot( menarche.cases$age ,menarche.cases$reached.menarche )
+
+```
+
+## check
+```{r}
+log<-glm(reached.menarche~age, family=binomial,
+           data= menarche.cases )
+summary(log)
 ```
 
 (Note that R's `glm()` function can also find the required model. You must use `optim()`, as the goal is to practice with it. If you know `glm()`, you're welcome to use it to check your work.)
