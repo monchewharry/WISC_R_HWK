@@ -4,18 +4,18 @@ output: html_document
 ---
 
 ## 3  
-
 ### a  
 ```{r}
-d<-read.csv("pgatour2006.csv",header = T);head(d)
+d<-read.csv("pgatour2006.csv",header = T)
 dd<-d[-c(1,2,4,11)]
 
 pairs(dd,upper.panel = NULL)
 ddd<-dd
 ddd$PrizeMoney<-log(dd$PrizeMoney)
 pairs(ddd, upper.panel = NULL)
-```
->I think it is appropriate to transform Y using the log transformation, because the scatter plots between the log(y) and other independent variables show much clear relationship.
+```  
+
+>I think it is appropriate to transform Y using the log transformation, because the scatter plots between the log(y) and other independent variables show much clear relationship.  
 
 ### b  
 
@@ -28,7 +28,7 @@ par(mfrow=c(1,1))
 
 plot(resid(full))
 abline(h=mean(resid(full)))
-```
+```  
 
 ### c  
 
@@ -44,12 +44,12 @@ abline(h=4/(196-7))
 
 library(car)
 outlierTest(full)#take 185th point as outliers
-```
+```  
 
 ### d  
 
 weakness:  
-- not all the independent variables are significant.
+- not all the independent variables are significant.  
 
 ### e  
 
@@ -57,41 +57,185 @@ It is dangerous to remove all the insignificant variables at one time, because i
 
 ## 6  
 
+You do need to generate 10,000 columns of X, but only a few $\beta_j$s are non zero to generate Y. The idea is to regress Y on all X columns, but eventually you find those/some/none of non zero $\beta_j$s. This problem is a low sample high dimension problem. Just clearly describe your data generating procedure, your data fitting procedure, and what you find.(Pro.Zhang) 
+
+### n=50    
+
 ```{r}
-n=50  
-p=10000
-mu<-sample(x = 1:10000,size = 10000)
-x<-sapply(mu, function(x) rnorm(n,mean = x,sd = 3))
-beta_t<-c(1:p)
-y<-x%*%beta_t+rnorm(n)
+n=50  #sample size
+p=10000 # dimension
+mu<-sample(x = 1:p,size = p)# different generation dist's mean
+x<-sapply(mu, function(x) rnorm(n,mean = x,sd = 3))# x
+
+beta_t<-rep(0,p)
+beta_t[1:3]<- c(1,2,3)#true beta  
+
+muu<-2+x%*%beta_t
 d<- as.data.frame(x)
-d<- cbind(y,d) 
-
-d_under<-d[1:10]
-lm(y~.,data = d_under)
-lm(y~.,data = d)
-
+yy<-lapply(seq(100),function(x) return(muu+rnorm(n)))
+#y=2 +x1 +2*x2 +3*x3 +epsilon(~N(0,1))
 ```
 
+
+```{r}
+full_fit<-function(y){
+  d<- cbind(y,d) 
+  under<-lm(y~.,data = d)# underfitting
+  result<-summary(under)
+  return(result$coefficients[1:5,1])
+}
+beta0123<-sapply(yy,  FUN = full_fit);beta0123[,c(1,100)]
+(sample.mean <- rowMeans(beta0123)) 
+(bias<-sample.mean-c(2,1,2,3,0))#bias
+(sample.var <- apply(beta0123, 1, var))#sample variance of true model's estimate
+```
+
+
+```{r}
+under_fit<-function(y){
+  d<- cbind(y,d) 
+  under<-lm(y~.,data = d[1:5])# underfitting
+  result<-summary(under)
+  return(result$coefficients[1:5,1])
+}
+beta0123<-sapply(yy,  FUN = under_fit);beta0123[,c(1,100)]
+(sample.mean <- rowMeans(beta0123)) 
+(bias<-sample.mean-c(2,1,2,3,0))#bias
+(sample.var <- apply(beta0123, 1, var))#variance of under-fitting model estimate
+```  
+
+> for under-fitting, its estimate is biased but with smaller variance.
+
+
+```{r}
+new<-rt(n,df=1,ncp = 3) #overfitting
+d.new<-cbind(new,d)
+over_fit<-function(y){
+  d<- cbind(y,d.new) 
+  under<-lm(y~.,data = d)
+  result<-summary(under)
+  return(result$coefficients[c(1,3,4,5,6),1])
+}
+beta0123<-sapply(yy,  FUN = over_fit);beta0123[,c(1,100)]
+(sample.mean <- rowMeans(beta0123)) 
+(bias<-sample.mean-c(2,1,2,3,0))#bias
+(sample.var <- apply(beta0123, 1, var))#sample variance of over-fitting model's estimate
+```  
+
+> for over-fitting, its estimate is unbiased but with bigger variance.
+
+### n=500  
+
+> Sorry, for the calculation limit of my computer, it takes too long to produce the result. But the process is the same as the situation when n=50.
+
+
 ## 8  
+
 ```{r}  
 job <- read.table("jobdata.txt", sep='',col.names=c("Y","X1","X2","X3","X4"))
 str(job)
 f<-lm(Y~.,data = job)
-step(f,direction = "forward")
-step(f,direction = "backward")
-step(f,direction = "both")
+step(f,direction = "forward", trace = FALSE)
+step(f,direction = "backward", trace = FALSE)
+step(f,direction = "both", trace = FALSE)
 ```
 
+> I personally tend to choose the model selected by the stepwise selection. Because the method of stepwise will test more combinations of the variables, while the forward selection or backward selection will all omit more potential combination of the independent variables.
 
 ## 9  
 
+### a  
+
 ```{r} 
-#install.packages("leaps")
+d<-read.csv("pgatour2006.csv",header = T);head(d)
+dd<-d[-c(1,2,4,11)]
+
 library(leaps)
+opt<-regsubsets(log(PrizeMoney)~.,data = dd,
+               nbest = 1,       # 1 best model for each number of predictors
+               nvmax = NULL,    # NULL for no limit on number of variables
+               force.in = NULL, force.out = NULL,
+               method = "exhaustive")
+par(mfrow=c(1,1))
+plot(opt, scale = "adjr2", main = "Adjusted R-square")
+
+```  
+
+> according to the plot, the optimal model by adjusted R-square should be $$log(PrizeMoney)= \beta_0 + GIR + BirdieConversion + SandSaves + Scrambling + PuttsPerRound$$
+
+```{r}
+library(bestglm)
+library(dplyr)
+dd<-mutate(y=log(PrizeMoney),.data = dd)
+dd<- select(dd,-PrizeMoney)
+
+aic<-bestglm(Xy = dd,
+            family = gaussian,
+            IC = "AIC", 
+            method = "exhaustive") 
+aic$BestModel
+```  
+
+> according to the optimal model by AIC, it is the same as produced by the adjusted R-square.
+
+```{r}
+bic<-bestglm(Xy = dd,
+            family = gaussian,
+            IC = "BIC", 
+            method = "exhaustive") 
+bic$BestModel
+```   
+
+> according to the optimal model by BIC, it is $$log(PrizeMoney)= \beta_0 + GIR + BirdieConversion + Scrambling$$  
+
+### b  
+```{r}  
+aic<-bestglm(Xy = dd,
+            family = gaussian,
+            IC = "AIC", 
+            method = "backward") 
+aic$BestModel  
+
+bic<-bestglm(Xy = dd,
+            family = gaussian,
+            IC = "BIC", 
+            method = "backward") 
+bic$BestModel
+```    
+
+### c  
+
+```{r}
+aic<-bestglm(Xy = dd,
+            family = gaussian,
+            IC = "AIC", 
+            method = "forward") 
+aic$BestModel  
+
+bic<-bestglm(Xy = dd,
+            family = gaussian,
+            IC = "BIC", 
+            method = "forward") 
+bic$BestModel
+```  
+
+> In my point of view, it is a coincidence that a and b are the same, because they could be different. I don't know how to explain carefully, but it is easy to think simply that if the optimal model from all possible options is within the step selecion process, the result should be the same like a and b. Otherwise the results are different like a and c.  
+
+### e  
+
+since the size of sample is over 100, so I think we should rely on the unbiased criteria **BIC**. Besides, since we can afford the cost of examing all possible models, we don't need step selection. As a result, I prefer the model $$log(PrizeMoney)= -11.1 + 0.17GIR + 0.21BirdieConversion + 0.092Scrambling$$.  
+
+The choice above is only based on the statistics, more careful consideration may be taken into account by some experts in this game(Frankly,I know nothing about it).    
+
+### f  
+
+since the response variable is the log function of PrizeMoney, we can interpret the model like when GIR increases by one unit the PrizeMoney will increase by 17% in average. Likewise, when BirdieConversion or Scrambling increases by one unit the PrizeMoney will increase by 21% or 9.25% in average
 
 
-```
+
+
+
+
 
 
 
