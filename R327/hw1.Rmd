@@ -86,8 +86,9 @@ lines(x=land,y = lse$fitted.values,col="limegreen",lwd=1.5)
 
 k=19000
 rho<-function(x){#define function Tukey's rho
-  if( abs(x)<= k ) return(x^2)
-  else return(2*k*abs(x) - k^2)
+#   if( abs(x)<= k ) return(x^2)
+#   else return(2*k*abs(x) - k^2)
+  ifelse(abs(x)<= k,x^2,2*k*abs(x) - k^2)
 }
 rho.d<- function(x){
   if( abs(x)<= k ) return(2*x)
@@ -127,17 +128,33 @@ legend("topright", c("LSE","Robust_NM","Robust_BFGS","Robust_CG"),lwd = rep(1.5,
 
 f. For which method was the value of the Tukey function the smallest?
 
-g. Create a plot of your $\rho(t)$ function (using `curve()`) over the
-interval $t \in (-100000,100000)$. Do you have an intuition of why the
-robust line is less influenced by the outliers in the data?
 
 ```{r}
 value<-c(robust1$value,robust2$value,robust3$value);names(value)<-c("Robust_NM","Robust_BFGS","Robust_CG")  
 
-names(value)[which.min(value)]
+names(value)[which.min(value)]  
 ```  
 
 >The Nelder-Mead method will provide minimum value of the Tukey function.    
+
+g. Create a plot of your $\rho(t)$ function (using `curve()`) over the
+interval $t \in (-100000,100000)$. Do you have an intuition of why the
+robust line is less influenced by the outliers in the data?  
+
+```{r}  
+k=19000
+rho<-function(x){#define function Tukey's rho
+#   if( abs(x)<= k ) return(x^2)
+#   else return(2*k*abs(x) - k^2)
+  ifelse(abs(x)<= k,x^2, 2*k*abs(x) - k^2)
+}
+
+
+curve(rho, from = -100000, to = 100000 )
+abline(v=c(-k,k),lty=2 )
+```
+
+
 
 # Part 2: Exponential smoothing
 
@@ -321,9 +338,14 @@ grr <- function(x) { ## Gradient of 'fr'
 
 (logit<-optim(par = c(0,0), fn = f1, grr, method ="Nelder-Mead" ))
 
+y<-cbind(rep(1,3918),menarche.cases$age) %*% logit$par # y is the linear form
+logit_verse<-function(x){
+  exp(x)/(1+exp(x))
+}
 
-plot( menarche.cases$age ,menarche.cases$reached.menarche )
-
+plot( x=y ,menarche.cases$reached.menarche, xlab = "linear form:y=x*beta", ylab = "p" )
+lines(x = y, y= logit_verse(y))
+abline(h=.5,v=0)
 ```
 
 ## check
@@ -332,5 +354,7 @@ log<-glm(reached.menarche~age, family=binomial,
            data= menarche.cases )
 summary(log)
 ```
+
+>the checking by `glm()` suggests that the optimiation is correct.  
 
 (Note that R's `glm()` function can also find the required model. You must use `optim()`, as the goal is to practice with it. If you know `glm()`, you're welcome to use it to check your work.)

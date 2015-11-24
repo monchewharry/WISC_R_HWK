@@ -1,6 +1,6 @@
 ---
 title: "hwk5_601"
-output: html_document
+output: word_document
 ---
 
 ## 3  
@@ -77,7 +77,7 @@ yy<-lapply(seq(100),function(x) return(muu+rnorm(n)))
 ```
 
 
-```{r}
+```{r,eval=F}
 full_fit<-function(y){
   d<- cbind(y,d) 
   under<-lm(y~.,data = d)# underfitting
@@ -107,7 +107,7 @@ beta0123<-sapply(yy,  FUN = under_fit);beta0123[,c(1,100)]
 > for under-fitting, its estimate is biased but with smaller variance.
 
 
-```{r}
+```{r,eval=F}
 new<-rt(n,df=1,ncp = 3) #overfitting
 d.new<-cbind(new,d)
 over_fit<-function(y){
