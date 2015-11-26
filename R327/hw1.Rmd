@@ -154,6 +154,7 @@ curve(rho, from = -100000, to = 100000 )
 abline(v=c(-k,k),lty=2 )
 ```
 
+>since the $\rho$ converts the residual t into a different form $\rho(t)$, it makes the abnormally large residual smaller as $2 k |t| - k^2$ instead of $t^2$.
 
 
 # Part 2: Exponential smoothing
