@@ -59,10 +59,10 @@ It is dangerous to remove all the insignificant variables at one time, because i
 
 You do need to generate 10,000 columns of X, but only a few $\beta_j$s are non zero to generate Y. The idea is to regress Y on all X columns, but eventually you find those/some/none of non zero $\beta_j$s. This problem is a low sample high dimension problem. Just clearly describe your data generating procedure, your data fitting procedure, and what you find.(Pro.Zhang) 
 
-### n=50    
+### n=500    
 
 ```{r}
-n=50  #sample size
+n=500  #sample size
 p=10000 # dimension
 mu<-sample(x = 1:p,size = p)# different generation dist's mean
 x<-sapply(mu, function(x) rnorm(n,mean = x,sd = 3))# x
@@ -77,7 +77,7 @@ yy<-lapply(seq(100),function(x) return(muu+rnorm(n)))
 ```
 
 
-```{r,eval=F}
+```{r}
 full_fit<-function(y){
   d<- cbind(y,d) 
   under<-lm(y~.,data = d)# underfitting
@@ -107,7 +107,7 @@ beta0123<-sapply(yy,  FUN = under_fit);beta0123[,c(1,100)]
 > for under-fitting, its estimate is biased but with smaller variance.
 
 
-```{r,eval=F}
+```{r}
 new<-rt(n,df=1,ncp = 3) #overfitting
 d.new<-cbind(new,d)
 over_fit<-function(y){
@@ -124,9 +124,6 @@ beta0123<-sapply(yy,  FUN = over_fit);beta0123[,c(1,100)]
 
 > for over-fitting, its estimate is unbiased but with bigger variance.
 
-### n=500  
-
-> Sorry, for the calculation limit of my computer, it takes too long to produce the result. But the process is the same as the situation when n=50.
 
 
 ## 8  
