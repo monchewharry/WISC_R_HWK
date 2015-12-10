@@ -11,23 +11,31 @@ if (!require("png")) {
   stopifnot(require("png"))
 }
 
-vg <- readPNG("Van_Gogh.png")
+vg <- readPNG("Van_Gogh.png");class(vg)
 red.vg <- vg[,,1]
 green.vg <- vg[,,2]
 blue.vg <- vg[,,3]
 
-
+library(parallel)
 
 mfilter<-function(mat,k){
   if(!is.matrix(mat)){
     return("bad data")
   }else{
-    mf<-mapply(function(x,y)mean(mat[(row(mat)-x)^2+(col(mat)-y)^2<=2*k^2]), row(mat), col(mat))
-    mf<-matrix(mf,dim(mat))
+    #mf<- mcmapply(function(x,y) mean(mat[(row(mat)-x)^2+(col(mat)-y)^2<=2*k^2]), row(mat), col(mat))
+    mf <- mcmapply(function(x,y) mean(mat[abs(row(mat)-x)<=k |abs(col(mat)-x)<=k]), row(mat),col(mat))
+    mf<- matrix(mf,dim(mat))
     return(mf)
   }
 }
-mat<- matrix(1:10,nrow = 5)
-mfilter(m,1)
+mf<-mclapply(1:3,function(x) mfilter(vg[,,x],1),mc.cores = 3)
+#array(mf,c())
+layout(matrix(1:3, ncol=3))
+image(t(red.vg[nrow(red.vg):1,]), col = gray((1:12)/13), main="Red channel")
+#writePNG
+# 
+# image(t(green.vg[nrow(green.vg):1,]), col = gray((1:12)/13), main="Green channel")
+# 
+# image(t(blue.vg[nrow(blue.vg):1,]), col = gray((1:12)/13), main="Blue channel")
 ```
 

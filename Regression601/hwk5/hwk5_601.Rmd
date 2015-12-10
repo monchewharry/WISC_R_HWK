@@ -143,7 +143,7 @@ step(f,direction = "both", trace = FALSE)
 ### a  
 
 ```{r} 
-d<-read.csv("pgatour2006.csv",header = T);head(d)
+d<-read.csv("/Users/CDX/WISC_R_HWK/Regression601/hwk5/pgatour2006.csv",header = T);head(d)
 dd<-d[-c(1,2,4,11)]
 
 library(leaps)
@@ -162,7 +162,7 @@ plot(opt, scale = "adjr2", main = "Adjusted R-square")
 ```{r}
 library(bestglm)
 library(dplyr)
-dd<-mutate(y=log(PrizeMoney),.data = dd)
+dd<-mutate(y=log(PrizeMoney),.data = dd)#new y
 dd<- select(dd,-PrizeMoney)
 
 aic<-bestglm(Xy = dd,
