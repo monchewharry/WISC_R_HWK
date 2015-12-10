@@ -1,0 +1,33 @@
+---
+title: "hw3"
+author: "Dingxian Cao"
+date: "December 8, 2015"
+output: html_document
+---
+
+```{r}
+if (!require("png")) {
+  install.packages("png")
+  stopifnot(require("png"))
+}
+
+vg <- readPNG("Van_Gogh.png")
+red.vg <- vg[,,1]
+green.vg <- vg[,,2]
+blue.vg <- vg[,,3]
+
+
+
+mfilter<-function(mat,k){
+  if(!is.matrix(mat)){
+    return("bad data")
+  }else{
+    mf<-mapply(function(x,y)mean(mat[(row(mat)-x)^2+(col(mat)-y)^2<=2*k^2]), row(mat), col(mat))
+    mf<-matrix(mf,dim(mat))
+    return(mf)
+  }
+}
+mat<- matrix(1:10,nrow = 5)
+mfilter(m,1)
+```
+
