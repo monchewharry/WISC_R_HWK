@@ -7,12 +7,13 @@ output: pdf_document
 
 ```{r}
 require(MASS)
-golf = read.csv("pgatour2006.csv", header = TRUE)
+golf = read.csv("../hwk5/pgatour2006.csv", header = TRUE)
 golf = golf[,-c(1,2,4,11)]
 head(golf)
 m1 = lm.ridge(log(PrizeMoney) ~ ., data = golf, lambda = seq(0,20,0.01))
 select(m1)
 (m2 = lm.ridge(log(PrizeMoney) ~ ., data = golf, lambda = 12.95))
+
 m2_matrix = as.matrix(cbind(rep(1,dim(golf)[1]), golf[,-1]))
 m2_fitted_value = m2_matrix %*% coef(m2)
 m2_r = m2_fitted_value - log(golf$PrizeMoney)
@@ -142,9 +143,10 @@ cat(sep = "", "The maximum likelihood estimates of beta0 and beta1 of the logist
 
 **(b)**
 ```{r}
-plot(jitter(renewal$amt),m_renewal$fitted.values, ylim = c(0,1), main = "Fitted Logistic Response", xlab = "amt", ylab = "")
-points(jitter(renewal$amt), as.numeric(renewal$renew)-1)
-lines(renewal$amt, m_renewal$fitted.values, col = "red")
+m_renewal<-gml
+plot(xj,m_renewal$fitted.values, ylim = c(0,1), main = "Fitted Logistic Response", xlab = "amt", ylab = "")
+points(xj, as.numeric(renewal$renew)-1)
+lines(xj, m_renewal$fitted.values, col = "red")
 ```
 
 **According to the plot, most of the original values which are equal to 1 have relatively larger fitted values, and most of the original values which are equal to 0 have relatively smaller fitted value.  I think the fitted model is not bad, but there are still some mistakes of prediction.**
