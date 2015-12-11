@@ -134,7 +134,11 @@ anova(glm(numb ~ 1, family = poisson, data = cerio), m_cerio, test = "Chisq")
 
 **4 (a)**
 ```{r}
-renewal = read.table("renewal.txt", header = FALSE)
+renewal = read.table("~/Downloads/renewal.txt", header = FALSE)
+str(renewal <- with(read.table("~/Downloads/renewal.txt", sep=""),
+   data.frame(renew=factor(V1, levels=1:0,
+   labels=c("N","Y")), amt=V2)))
+
 names(renewal) = c("renew", "amt")
 renewal$renew = factor(renewal$renew)
 m_renewal = glm(renew ~ ., family = binomial, data = renewal)
@@ -143,10 +147,10 @@ cat(sep = "", "The maximum likelihood estimates of beta0 and beta1 of the logist
 
 **(b)**
 ```{r}
-m_renewal<-gml
+xj<- jitter(renewal$amt)
 plot(xj,m_renewal$fitted.values, ylim = c(0,1), main = "Fitted Logistic Response", xlab = "amt", ylab = "")
 points(xj, as.numeric(renewal$renew)-1)
-lines(xj, m_renewal$fitted.values, col = "red")
+lines(lowess(xj,as.numeric(renewal$renew)-1), col = "red")
 ```
 
 **According to the plot, most of the original values which are equal to 1 have relatively larger fitted values, and most of the original values which are equal to 0 have relatively smaller fitted value.  I think the fitted model is not bad, but there are still some mistakes of prediction.**

@@ -148,7 +148,7 @@ coef(gml)
 xj<-jitter(renewal$amt)
 plot(xj,gml$fitted.values, ylim = c(0,1), main = "Fitted Logistic Response", xlab = "amt", ylab = "")
 points(xj, as.numeric(renewal$renew)-1)
-lines(lowess(xj, gml$fitted.values), col = "red")
+lines(lowess(xj,as.numeric(renewal$renew)-1 ), col = "red")
 
 
 xbnew<- c(1,40) %*% coef(gml)
