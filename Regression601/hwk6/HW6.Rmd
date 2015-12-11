@@ -1,0 +1,210 @@
+---
+title: "Untitled"
+output: pdf_document
+---
+
+**1 (a)**
+
+```{r}
+require(MASS)
+golf = read.csv("pgatour2006.csv", header = TRUE)
+golf = golf[,-c(1,2,4,11)]
+head(golf)
+m1 = lm.ridge(log(PrizeMoney) ~ ., data = golf, lambda = seq(0,20,0.01))
+select(m1)
+(m2 = lm.ridge(log(PrizeMoney) ~ ., data = golf, lambda = 12.95))
+m2_matrix = as.matrix(cbind(rep(1,dim(golf)[1]), golf[,-1]))
+m2_fitted_value = m2_matrix %*% coef(m2)
+m2_r = m2_fitted_value - log(golf$PrizeMoney)
+m2_r_sd = m2_r/sd(m2_r)
+golf_log = golf
+golf_log$PrizeMoney = log(golf$PrizeMoney)
+plot(golf, main = "PrizeMoney")
+plot(golf_log, main = "log(PrizeMoney)")
+layout(matrix(c(1,2), ncol = 2))
+plot(m2_fitted_value, m2_r_sd, main = "Residuals vs Fitted", xlab = "Fitted Value", ylab = "Residuals")
+qqnorm(m2_r_sd, ylab = "standard residual")
+qqline(m2_r_sd, col = "red")
+layout(1)
+```
+
+**From the scatter plots of the data, we can see that after log transformation, points seem to be more random and evenly distributed.**
+
+**From the Residuals vs Fitted plot, we can see that residuals are symmetrically distributed around zero and show no patterns.  However, there are some points which have relatively large residuals.  The Q-Q plot indicates that residuals are approximately normally distributed.**
+
+**(b)**
+
+```{r}
+require(pls)
+m_pca = pcr(log(PrizeMoney) ~ ., data = golf)
+summary(m_pca)
+m_pcr = lm(log(PrizeMoney) ~ m_pca$scores, golf)
+summary(m_pcr)
+layout(matrix(c(1,2,3,4),ncol = 2, byrow = TRUE))
+plot(m_pcr)
+layout(1)
+```
+
+**Residuals are symmetrically distributed around zero and show no patterns.  And the Q-Q plot indicates that residuals are approximately normally distributed.**
+
+**(c)**
+
+```{r}
+m_pls = plsr(log(PrizeMoney) ~ ., data = golf)
+summary(m_pls)
+m_pls_lm = lm(log(PrizeMoney) ~ m_pls$scores, golf)
+summary(m_pls_lm)
+layout(matrix(c(1,2,3,4),ncol = 2, byrow = TRUE))
+plot(m_pls_lm)
+layout(1)
+```
+
+**Diagnostic plots of PLS are very similar to those of PCR.  Residuals are symmetrically distributed around zero and show no patterns.  And the Q-Q plot indicates that residuals are approximately normally distributed.**
+
+**(d)**
+
+**For model (a), since we imposes constrains on coefficients, the regression estimator biased, and the accuracy is reduced.  Besides, because some points have relatively large residuals, there may exist outliers in the data.  For model (b) and (c), the variables we use to predict the dependent variable are combinations of our  ordinary variables.  Therefore, it becomes harder for us to interpret them.  Besides, since PCR regresses the response on the principal components of X, it is possible that some principal components are not relevant for prediction.**
+
+**(e)**
+
+**Because some predictors are important for prediction, but the presence of other variables in the model makes the t-values insignificant.  After excluding some specific variables from our model, the t-value of them will be significant again. If we remove all variables with insignificant t-values at one time, we may remove some variables actually have important effects on our response variable. Therefore, I would not recommend this approach.**
+
+**2 (a)**
+```{r}
+data_q2 = read.table("HWK6q2.txt", header = FALSE)
+names(data_q2) = c("Y", "X1", "X2", "X3", "X4", "X5", "X6", "X7", "X8")
+head(data_q2)
+m1_q2 = lm.ridge(Y ~ ., data = data_q2, lambda = seq(0,20,0.01))
+select(m1_q2)
+(m2_q2 = lm.ridge(Y ~ ., data = data_q2, lambda = 0.6))
+m2_q2_matrix = as.matrix(cbind(rep(1,dim(data_q2)[1]), data_q2[,-1]))
+m2_q2_fitted_value = m2_q2_matrix %*% coef(m2_q2)
+m2_q2_r = m2_q2_fitted_value - data_q2$Y
+m2_q2_r_sd = m2_q2_r/sd(m2_q2_r)
+plot(data_q2)
+layout(matrix(c(1,2), ncol = 2))
+plot(m2_q2_fitted_value, m2_q2_r_sd, main = "Residuals vs Fitted", xlab = "Fitted Value", ylab = "Residuals")
+qqnorm(m2_q2_r_sd, ylab = "standard residual")
+qqline(m2_q2_r_sd, col = "red")
+layout(1)
+```
+
+**(b)**
+```{r}
+m_q2_pca = pcr(Y ~ ., data = data_q2)
+summary(m_q2_pca)
+m_q2_pcr = lm(Y ~ m_q2_pca$scores, data_q2)
+summary(m_q2_pcr)
+layout(matrix(c(1,2,3,4),ncol = 2, byrow = TRUE))
+plot(m_q2_pcr)
+layout(1)
+```
+
+**(c)**
+```{r}
+m_q2_pls = plsr(Y ~ ., data = data_q2)
+summary(m_q2_pls)
+m_q2_pls_lm = lm(Y ~ m_q2_pls$scores, data_q2)
+summary(m_q2_pls_lm)
+layout(matrix(c(1,2,3,4),ncol = 2, byrow = TRUE))
+plot(m_q2_pls_lm)
+layout(1)
+```
+
+**3**
+
+**Since our response variable, number of organisms, is count data, I think the univariate distribution of it is Poisson.  Therefore, I build a generalized linear model as follow.**
+
+```{r}
+cerio = read.table("ceriodaphnia.txt", header = FALSE)
+names(cerio) = c("numb", "conc", "strain")
+cerio$strain = as.factor(cerio$strain)
+m_cerio = glm(numb ~ ., family = poisson, data = cerio)
+summary(m_cerio)
+layout(matrix(c(1,2,3,4),ncol = 2, byrow = TRUE))
+plot(m_cerio)
+layout(1)
+anova(glm(numb ~ 1, family = poisson, data = cerio), m_cerio, test = "Chisq")
+```
+
+**From the outcome, we can see that all predictors are significant.  The coefficient before the concentration of jet fuel indicates that the concentration of jet fuel has negtive effects on the mean number of counts.  The cofficient before strain2 indicates that when other variables are held constant, the mean number of counts in condition of the second type of strain minus the mean number of counts in condition of the first type of strain is negative.**
+
+**The Residuals vs Fitted plot implies that residuals are symmetrically distributed around zero and show no patterns.  However, the Residuals vs Leverage plot indicates that there may be leverage points in our data.  According to the likelihood ratio test, we can see that our model is significant, compared with the model with no predictors.**
+
+**4 (a)**
+```{r}
+renewal = read.table("renewal.txt", header = FALSE)
+names(renewal) = c("renew", "amt")
+renewal$renew = factor(renewal$renew)
+m_renewal = glm(renew ~ ., family = binomial, data = renewal)
+cat(sep = "", "The maximum likelihood estimates of beta0 and beta1 of the logistic regression model are c(", m_renewal$coefficients[1], ", ", m_renewal$coefficients[2], ")")
+```
+
+**(b)**
+```{r}
+plot(jitter(renewal$amt),m_renewal$fitted.values, ylim = c(0,1), main = "Fitted Logistic Response", xlab = "amt", ylab = "")
+points(jitter(renewal$amt), as.numeric(renewal$renew)-1)
+lines(renewal$amt, m_renewal$fitted.values, col = "red")
+```
+
+**According to the plot, most of the original values which are equal to 1 have relatively larger fitted values, and most of the original values which are equal to 0 have relatively smaller fitted value.  I think the fitted model is not bad, but there are still some mistakes of prediction.**
+
+**(c)**
+
+**The coefficient beta1 measures the effect produced by the amount of dues on the response variable.  Specifically, exp(beta1), which is 1.133, means if the annual dues increase one dollar, the odds ratio of getting membership unrenewed versus renewed will increase by 1.133times.**
+
+**(d)**
+```{r}
+beta0 = m_renewal$coefficients[1]
+beta1 = m_renewal$coefficients[2]
+pred_dues = 40
+pred_prob = exp(beta0 + beta1 * pred_dues) / (1+exp(beta0 + beta1 * pred_dues))
+cat(sep = "", "The estimated probability that association members will not renew their membership if the dues are increased by $40 is ", pred_prob, ".")
+```
+
+**(e)**
+```{r}
+prep_p = 0.75
+pred_d = (log(prep_p/(1-prep_p)) - beta0)/beta1
+cat(sep = "", "The amount of dues increase for which 75 percent of the members are expected not to renew their association membership is ", pred_d, ".")
+```
+
+**(f)**
+```{r}
+conf_int = exp(confint(m_renewal, "amt", level = 0.9))
+cat(sep = "", "The approximate 90 percent confidence interval for exp(beta1) is c(", conf_int[1], ", ", conf_int[2], ").")
+```
+
+**This interval means that according to our fitted model, the value of exp(beta1) is between 1.02 and 1.28 with the probability 0.9.**
+
+**(g)**
+```{r}
+require(aod)
+wald.test(Sigma = vcov(m_renewal), b = coef(m_renewal), Term = 2)
+```
+
+**In this test, the null hypothesis is the coefficient before amt, beta1, equals to 0, and the alternative hypothesis is beta1 does not equal to 0.  According to the outcome, if we choose alpha = 0.1, we should reject null hypothesis and consider beta1 not equal to 0, which means dollar increase in dues is related to the probability of membership renewal.**
+
+**(h)**
+```{r}
+m0_renewal = glm(renew ~ 1, family = binomial, data = renewal)
+anova(m0_renewal, m_renewal, test = "Chisq")
+```
+
+**Full model: renew ~ amt**
+
+**Reduced model: renew ~ 1**
+
+**According to the outcome of our likelihood ratio test, if we choose alpha = 0.1, we should reject Model 1 in favor of Model 2, which means that dollar increase in dues is related to the probability of membership renewal.**
+
+**Compared with Wald test, both of them come to a conclusion that dollar increase in dues is related to the probability of membership renewal by using alpha = 0.1.**
+
+**6 (a)**
+```{r}
+isch = read.table("Ischemic.txt", header = FALSE)
+names(isch) = c("id", "cost", "age", "gender", "int", "ndrug", "emerg", "compl", "comorb", "duration")
+isch$gender = factor(isch$gender, labels = c("F", "M"))
+m_isch = glm(emerg ~ ., family = poisson, data = isch)
+summary(m_isch)
+print(m_isch$coefficients)
+```

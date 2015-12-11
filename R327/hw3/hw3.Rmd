@@ -19,15 +19,20 @@ blue.vg <- vg[,,3]
 library(parallel)
 
 mfilter<-function(mat,k){
-  if(!is.matrix(mat)){
-    return("bad data")
-  }else{
     #mf<- mcmapply(function(x,y) mean(mat[(row(mat)-x)^2+(col(mat)-y)^2<=2*k^2]), row(mat), col(mat))
     mf <- mcmapply(function(x,y) mean(mat[abs(row(mat)-x)<=k |abs(col(mat)-x)<=k]), row(mat),col(mat))
     mf<- matrix(mf,dim(mat))
     return(mf)
-  }
 }
+
+mfilter <- function(mat,k){
+  r<-dim(mat)[1]
+  c<-dim(mat)[2]
+  mf <- mcmapply(function(x,y) mean(mat[(x-k):(x+k),(x-k):(x+k)])
+                 ,row(mat)[(k+1):(r-k),(k+1):(r-k)]
+                 ,col(mat)[(k+1):(r-k),(k+1):(r-k)])  
+}
+
 mf<-mclapply(1:3,function(x) mfilter(vg[,,x],1),mc.cores = 3)
 #array(mf,c())
 layout(matrix(1:3, ncol=3))
