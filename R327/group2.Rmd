@@ -17,28 +17,34 @@ persp3d(z,xlim = c(-k,k),ylim = c(-k,k))
 ```
 
 ```{r}
-k=120
+k=80
 z<-function(b){
   x<-b[1]
   y<-b[2]
-  (1-x/k)*(1+x/k)*(1-y/k)*(1+y/k)*(-(y+47)*sin(sqrt(abs(y+x/2+47)))-x*sin(sqrt(abs(x-(y+47)))))
+  ((1-x/k)*(1+x/k)*(1-y/k)*(1+y/k)*(-(y+47)*sin(sqrt(abs(y+x/2+47)))-x*sin(sqrt(abs(x-(y+47))))))*(-1)
 }
-initials=c(0,0)
 
-x<- seq(-k,k,by = 0.1);y<- seq(-k,k,by = 0.1)
+
+x<- seq(-k,k,by = 10);y<- seq(-k,k,by = 10)
 x<-rep(x,length(x)); y<- sapply(y, function(x) rep(x,length(y)))
 y<- as.vector(y)
 initials<- rbind(x,y)
 #split(initials)
 initials<-lapply(1:ncol(initials), function(i) initials[,i])
-require(parallel)
-localmin<-mclapply(initials,FUN = function(x) return(optim(par =c(x[1],x[2]),fn = z,method ="Nelder-Mead")),mc.cores = 4)
-save(localmin,file = "localmin.RData")
 
+require(parallel)
+(start <- Sys.time())
+localmin<-mclapply(initials,FUN = function(x) return(optim(par =c(x[1],x[2]),fn = z,method ="Nelder-Mead")),mc.cores = 4)
+
+(end<- Sys.time())
+save(localmin,file = "localmin.RData")
 ```
 
 ```{r}
-points3d()
+ x <- sapply(localmin, function(x) return(x$par[1]))
+ y <- sapply(localmin, function(x) return(x$par[2]))
+ z <- sapply(localmin, function(x) return(x$value));z <- -z
+points3d(x =x ,y =y ,z =z ,col = "red",size=4.5)
 ```
 
 
